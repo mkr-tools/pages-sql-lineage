@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none';
+      script-src 'sha256-rXbXa0vQGqDztwbnElMUHP8NwMHWrIfG0zdB+kubRrk=' 'sha256-Knc1M3G/vPnlvSXR61Vo5ZY9cCkvSIlzdgnmn4Jg2wU=' 'sha256-nUb7sX9k47c9h8aHZGZFBaVcvfBOzZc0nXXj9PMwhvk=' 'sha256-+YPojsZMOCzTqjxKbS56x3ZwNVO0NrskPTRIfkFOtyo=';
+      script-src-attr 'none';
+      style-src 'none';
+      style-src-elem 'nonce-4xqrpJRjlOoeM9KMGownaGU3V3y6vW1vnwzR8sLNoa4=' 'sha256-A1AopJMIclChNJaWH/qbR2qzSba/uIPDykPxetRgcRs=' 'sha256-h3y3Llm3ihFBGBWR9DYNo+OkZDf9hoLRcsvzGZRV52g=';
+      style-src-attr 'unsafe-inline';
+      img-src data:;
+      font-src data:;
+      frame-src blob:;
+      child-src blob:;
+      worker-src blob:;
+      connect-src 'self';
+      media-src 'none';
+      object-src 'none';
+      base-uri 'none';
+      form-action 'none'" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="referrer" content="no-referrer" />
+    <link rel="icon" href="data:," />
+    <title>SQL Lineage</title>
+    <style>html,body{margin:0;min-width:320px;min-height:100%;height:100%;background:#090d12}body{overflow:hidden}iframe{display:block;width:100%;height:100%;border:0;background:#090d12}[hidden]{display:none!important}#launch-status{height:100%;display:grid;place-items:center;margin:0;color:#e5edf7;font:16px system-ui}</style>
+  </head>
+  <body>
+    <p id="launch-status" role="status">Loading...</p><noscript>JavaScript is required.</noscript>
+    <iframe
+      hidden
+      id="sql-lineage-app"
+      title="SQL Lineage"
+      sandbox="allow-scripts"
+      referrerpolicy="no-referrer"
+      allow="accelerometer 'none'; autoplay 'none'; bluetooth 'none'; camera 'none'; clipboard-read 'none'; clipboard-write 'none'; display-capture 'none'; encrypted-media 'none'; fullscreen 'none'; geolocation 'none'; gyroscope 'none'; hid 'none'; magnetometer 'none'; microphone 'none'; midi 'none'; payment 'none'; publickey-credentials-get 'none'; serial 'none'; usb 'none'; xr-spatial-tracking 'none'"
+    ></iframe>
+    <script id="sql-lineage-app-html" type="application/json">{"version":2,"file":"app.b42902f0c7e63ef8a7bc07fc95b21c9ded497cae942c9ee090750768eac601ca.bin"}</script>
+    <script>(async () => {
+  const openRequestType = "sql-lineage:folder-picker:open-request";
+  const openResultType = "sql-lineage:folder-picker:open-result";
+  const openErrorType = "sql-lineage:folder-picker:open-error";
+  const supportedExtensions = new Set([".bteq",".ddl",".dml",".hql",".prc",".proc",".psql",".sp",".sql",".txt"]);
+  const iframe = document.getElementById('sql-lineage-app');
+  const appHtmlElement = document.getElementById('sql-lineage-app-html');
+  let isOpeningFolder = false;
+
+  if (!(iframe instanceof HTMLIFrameElement) || !appHtmlElement?.textContent) {
+    throw new Error('Distribution wrapper could not find the app iframe payload.');
+  }
+
+
+  window.addEventListener('hashchange', () => window.location.reload());
+  const status = document.getElementById('launch-status');
+  function closeConnections() {
+    const policy = document.createElement('meta');
+    policy.httpEquiv = 'Content-Security-Policy';
+    policy.content = "connect-src 'none'";
+    document.head.append(policy);
+  }
+  function fail(message) {
+    closeConnections();
+    if (status) status.textContent = message;
+    iframe.remove();
+  }
+  const match = /^#k=([A-Za-z0-9_-]{22})$/.exec(window.location.hash);
+  if (!match) { fail('Incorrect link.'); return; }
+  if (!window.isSecureContext || !window.crypto?.subtle || !window.DecompressionStream) {
+    fail('This browser is unsupported. Please open this link in Chrome over HTTPS.');
+    return;
+  }
+  let appHtml;
+  try {
+    const keyBytes = Uint8Array.from(atob(match[1].replaceAll('-', '+').replaceAll('_', '/') + '=='), c => c.charCodeAt(0));
+    const canonicalKey = btoa(String.fromCharCode(...keyBytes))
+      .replaceAll('+', '-').replaceAll('/', '_').replace(/=+$/, '');
+    if (keyBytes.length !== 16 || canonicalKey !== match[1]) throw new Error();
+    const manifest = JSON.parse(appHtmlElement.textContent);
+    if (manifest.version !== 2 || typeof manifest.file !== 'string' ||
+        !/^app\.[0-9a-f]{64}\.bin$/.test(manifest.file)) throw new Error();
+    const url = new URL(manifest.file, window.location.href);
+    url.hash = '';
+    if (url.origin !== window.location.origin) throw new Error();
+    const response = await fetch(url, {
+      credentials: 'omit', referrerPolicy: 'no-referrer', redirect: 'error',
+    });
+    if (!response.ok) throw new Error();
+    const payload = new Uint8Array(await response.arrayBuffer());
+    closeConnections();
+    const digest = Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', payload)))
+      .map(byte => byte.toString(16).padStart(2, '0')).join('');
+    if (manifest.file !== 'app.' + digest + '.bin' || payload.length <= 36 ||
+        new TextDecoder().decode(payload.subarray(0, 8)) !== 'UNLIST02') throw new Error();
+    const key = await crypto.subtle.importKey('raw', keyBytes, 'AES-GCM', false, ['decrypt']);
+    keyBytes.fill(0);
+    const compressed = await crypto.subtle.decrypt({
+      name: 'AES-GCM', iv: payload.subarray(8, 20), tagLength: 128,
+      additionalData: payload.subarray(0, 8),
+    }, key, payload.subarray(20));
+    const stream = new Blob([compressed]).stream().pipeThrough(new DecompressionStream('gzip'));
+    appHtml = await new Response(stream).text();
+  } catch { fail('Incorrect link.'); return; }
+  appHtmlElement.remove();
+
+  const appUrl = URL.createObjectURL(new Blob([appHtml], { type: 'text/html' }));
+  iframe.addEventListener('load', () => {
+    const status = document.getElementById('launch-status');
+    if (status) status.hidden = true;
+    iframe.hidden = false;
+  }, { once: true });
+  iframe.src = appUrl;
+  window.addEventListener('pagehide', () => {
+    URL.revokeObjectURL(appUrl);
+  });
+
+  function postToApp(message) {
+    iframe.contentWindow?.postMessage(message, '*');
+  }
+
+  function isSupportedFile(name) {
+    const extensionStart = name.lastIndexOf('.');
+    return (
+      extensionStart !== -1 &&
+      supportedExtensions.has(name.slice(extensionStart).toLowerCase())
+    );
+  }
+
+  async function readDirectoryFiles(directoryHandle, pathParts, files) {
+    const childHandles = [];
+
+    for await (const childHandle of directoryHandle.values()) {
+      childHandles.push(childHandle);
+    }
+
+    childHandles.sort((left, right) => {
+      if (left.kind !== right.kind) {
+        return left.kind === 'directory' ? -1 : 1;
+      }
+
+      return left.name.localeCompare(right.name);
+    });
+
+    for (const childHandle of childHandles) {
+      if (childHandle.kind === 'directory') {
+        await readDirectoryFiles(childHandle, [...pathParts, childHandle.name], files);
+        continue;
+      }
+
+      if (!isSupportedFile(childHandle.name)) {
+        continue;
+      }
+
+      const file = await childHandle.getFile();
+      files.push({
+        path: [...pathParts, childHandle.name].join('/'),
+        content: await file.text(),
+      });
+    }
+  }
+
+  async function openFolder() {
+    const directoryPicker = window.showDirectoryPicker;
+
+    if (!directoryPicker) {
+      postToApp({
+        type: openErrorType,
+        errorMessage: 'File System Access API is not available in this browser.',
+        wasCancelled: false,
+      });
+      return;
+    }
+
+    isOpeningFolder = true;
+
+    try {
+      const directoryHandle = await directoryPicker.call(window, { mode: 'read' });
+      const files = [];
+
+      await readDirectoryFiles(directoryHandle, [directoryHandle.name], files);
+      postToApp({
+        type: openResultType,
+        rootName: directoryHandle.name,
+        files,
+      });
+    } catch (error) {
+      const wasCancelled = error instanceof DOMException && error.name === 'AbortError';
+
+      postToApp({
+        type: openErrorType,
+        errorMessage: error instanceof Error ? error.message : 'Could not open the selected folder.',
+        wasCancelled,
+      });
+    } finally {
+      isOpeningFolder = false;
+    }
+  }
+
+  window.addEventListener('message', (event) => {
+    if (
+      event.source !== iframe.contentWindow ||
+      !event.data || typeof event.data !== 'object' ||
+      event.data.type !== openRequestType ||
+      isOpeningFolder
+    ) {
+      return;
+    }
+
+    void openFolder();
+  });
+})();</script>
+  </body>
+</html>
